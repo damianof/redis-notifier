@@ -4,14 +4,44 @@
 var harness = require('./test.harness'),
   RedisEventNotifier = require(harness.lib + 'RedisEventNotifier'),
   redis = require('redis'),
-  notifierOptions = {logLevel : 'DEBUG'};
+  sentinel = require('redis-sentinel'),
+  notifierOptions = {
+	dbConfig: {
+		useRedisSentinel: false,
+		db:		 0,
+		redis: {
+			host: 'localhost',
+			port: 6379,
+			// auth_pass: 'yourpassword',
+			// return_buffers: true, // required if storing binary data
+			// retry_max_delay: 1000
+		},
+		redisSentinel: {
+			masterName: 'mymaster',
+			endPoints: [
+				{host: 'localhost', port: 26379},
+				{host: 'localhost', port: 26380},
+				{host: 'localhost', port: 26381}
+			],
+			options: {
+				// auth_pass: 'yourpassword'
+				// , return_buffers: true // required if storing binary data
+				//, connect_timeout: 10000
+				//, retry_max_delay: 1000
+			}
+		}
+	},
+	expired: true,
+	evicted: true,
+    logLevel : 'DEBUG'
+  };
 
 
 //Integration Test Suite
 describe('RedisEventNotifier Integration Suite', function () {
 
   it('Should create a successful redis connection', function (done) {
-    var eventNotifier = new RedisEventNotifier(redis, notifierOptions);
+    var eventNotifier = new RedisEventNotifier(redis, sentinel, notifierOptions);
 
     //Wait For Event Notifier To Be Ready
     eventNotifier.on('ready', function () {
@@ -21,7 +51,7 @@ describe('RedisEventNotifier Integration Suite', function () {
   });
 
   it('Should Receive a __keyevent@0__:expired event upon key expire', function (done) {
-    var eventNotifier = new RedisEventNotifier(redis, notifierOptions);
+    var eventNotifier = new RedisEventNotifier(redis, sentinel, notifierOptions);
 
     //Wait for Message Event
     eventNotifier.on('message', function (pattern, channel, key) {

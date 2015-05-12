@@ -1,5 +1,11 @@
-## Redis KeySpace Event Notifier [![Build Status](https://travis-ci.org/iamchrismiller/redis-notifier.png)](https://travis-ci.org/iamchrismiller/redis-notifier)
-
+  IMPORTANT:
+  This is a fork of https://github.com/iamchrismiller/redis-notifier
+  Here I added support for redis sentinel.
+  The configuration options for the database are structured differently than in the original.
+  I will also create a pull request for this change on https://github.com/iamchrismiller/redis-notifier
+  You need to pass redis-sentinel to this if you plan to use sentinel, otherwise pass null or undefined.
+  TODO: need to add unit tests using sentinel.
+  
   Subscribe To Redis Keyspaced Events (v2.8.x)
   Using Redis' Newly Released Keyspaced Events Feature You can now subscribe to events that the server emits
   Depending on the subscription mode you subscribe with when starting the Redis Server.
@@ -30,9 +36,10 @@ If you are using `node_redis` pre `v0.11.0` checkout the tag `v0.1.2`
 
   ```javascript
   var redis = require('redis');
+  var sentinel = require('redis-sentinel');// if you need sentinel, other wise just pass null
   var RedisNotifier = require('redis-notifier');
 
-  var eventNotifier = new RedisNotifier(redis, {
+  var eventNotifier = new RedisNotifier(redis, sentinel, {
     redis : { host : '127.0.0.1', port : 6379 },
     expired : true,
     evicted : true,
@@ -60,6 +67,7 @@ In lieu of a formal style-guide, take care to maintain the existing coding style
 
 ## Release History
 
+- 0.3.0 added support for redis sentinel
 - 0.2.0 updated node_redis connection args, added deinit method
 - 0.1.2 updated logger interface
 - 0.1.1 changed expire attribute to expired

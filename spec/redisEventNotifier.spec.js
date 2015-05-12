@@ -5,19 +5,49 @@
 var harness = require('./test.harness'),
  RedisEventNotifier = require(harness.lib + 'RedisEventNotifier'),
  redis = require('./mocks/redis'),
- notifierOptions = {logLevel : 'DEBUG'};
+ sentinel = require('./mocks/redis-sentinel'),
+ notifierOptions = {
+	dbConfig: {
+		useRedisSentinel: false,
+		db:		 0,
+		redis: {
+			host: 'localhost',
+			port: 6379,
+			// auth_pass: 'yourpassword',
+			// return_buffers: true, // required if storing binary data
+			// retry_max_delay: 1000
+		},
+		redisSentinel: {
+			masterName: 'mymaster',
+			endPoints: [
+				{host: 'localhost', port: 26379},
+				{host: 'localhost', port: 26380},
+				{host: 'localhost', port: 26381}
+			],
+			options: {
+				// auth_pass: 'yourpassword'
+				// , return_buffers: true // required if storing binary data
+				//, connect_timeout: 10000
+				//, retry_max_delay: 1000
+			}
+		}
+	},
+	expired: true,
+	evicted: true,
+    logLevel : 'DEBUG'
+  };
 
 //Connection Test Suite
 describe('RedisEventNotifier Suite', function () {
 
   it('Should have a construct and throw an error if redis instance is not supplied', function () {
     expect(function () {
-      new RedisEventNotifier(null, notifierOptions);
+      new RedisEventNotifier(null, sentinel, notifierOptions);
     }).toThrow(new Error("You must provide a Redis module"));
   });
 
   it('Should evaulate the channel response correctly for parseMessageChannel', function () {
-    var eventNotifier = new RedisEventNotifier(redis, notifierOptions);
+    var eventNotifier = new RedisEventNotifier(redis, sentinel, notifierOptions);
 
     var expiredKeyTest = eventNotifier.parseMessageChannel('__keyevent@0__:expired');
     expect(expiredKeyTest.key).toBe('expired');
@@ -29,7 +59,7 @@ describe('RedisEventNotifier Suite', function () {
   });
 
   it('Should emit a "message" event when a key expires', function (done) {
-    var eventNotifier = new RedisEventNotifier(redis, notifierOptions);
+    var eventNotifier = new RedisEventNotifier(redis, sentinel, notifierOptions);
 
     process.nextTick(function () {
       //trigger expire message (test helper)
@@ -45,7 +75,7 @@ describe('RedisEventNotifier Suite', function () {
   });
 
   it('Should emit a "message" event when a key is evicted', function (done) {
-    var eventNotifier = new RedisEventNotifier(redis, notifierOptions);
+    var eventNotifier = new RedisEventNotifier(redis, sentinel, notifierOptions);
 
     process.nextTick(function () {
       //trigger expire message (test helper)
